@@ -1,3 +1,5 @@
+def jenkinsNode = "Jenkins-Agent"
+
 withCredentials([string(credentialsId: 'JENKINS_AWS_ACCESS_KEY_ID', variable: 'my_secret_value')]) {
                 // Your pipeline steps that use the secret go here
                 // The secret value is available in the variable "my_secret_value"
@@ -10,7 +12,7 @@ withCredentials([string(credentialsId: 'JENKINS_AWS_SECRET_ACCESS_KEY', variable
                 }
 
 pipeline {
-    agent { label 'Jenkins-Agent' }
+    agent { label 'jenkinsNode' }
     tools {
         jdk 'Java17'
         maven 'Maven3'
@@ -92,7 +94,7 @@ pipeline {
                     sh """
                     docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
                     docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                    docker push ${IMAGE_NAME}:latest
+                    
                     """
                 }
             }
