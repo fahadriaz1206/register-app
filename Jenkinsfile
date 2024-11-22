@@ -60,9 +60,11 @@ pipeline {
         stage("Authenticate with AWS ECR") {
             steps {
                 script {
-                    sh """
-                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-                    """
+                    withAWS(region: "${AWS_REGION}", credentials: 'aws-ecr-credentials') {
+                        sh """
+                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                        """
+                    }
                 }
             }
         }
@@ -70,15 +72,17 @@ pipeline {
         stage("Build & Push Docker Image") {
             steps {
                 script {
-                    // Build the Docker image
-                    docker_image = docker.build "${IMAGE_NAME}:${IMAGE_TAG}"
+                    withAWS(region: "${AWS_REGION}", credentials: 'aws-ecr-credentials') {
+                        // Build the Docker image
+                        docker_image = docker.build "${IMAGE_NAME}:${IMAGE_TAG}"
 
-                    // Tag and Push the image to ECR
-                    sh """
-                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
-                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                    docker push ${IMAGE_NAME}:latest
-                    """
+                        // Tag and Push the image to ECR
+                        sh """
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                        docker push ${IMAGE_NAME}:latest
+                        """
+                    }
                 }
             }
         }
