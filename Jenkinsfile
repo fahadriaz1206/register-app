@@ -12,7 +12,7 @@ withCredentials([string(credentialsId: 'JENKINS_AWS_SECRET_ACCESS_KEY', variable
                 }
 
 pipeline {
-    agent { label 'jenkinsNode' }
+    agent { label "${jenkinsNode}" }
     tools {
         jdk 'Java17'
         maven 'Maven3'
@@ -94,7 +94,7 @@ pipeline {
                     sh """
                     docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
                     docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                    
+
                     """
                 }
             }
