@@ -1,3 +1,14 @@
+withCredentials([string(credentialsId: 'JENKINS_AWS_ACCESS_KEY_ID', variable: 'my_secret_value')]) {
+                // Your pipeline steps that use the secret go here
+                // The secret value is available in the variable "my_secret_value"
+                AWS_ACCESS_KEY_ID = "${my_secret_value}"
+                }
+withCredentials([string(credentialsId: 'JENKINS_AWS_SECRET_ACCESS_KEY', variable: 'my_secret_value')]) {
+                // Your pipeline steps that use the secret go here
+                // The secret value is available in the variable "my_secret_value"
+                AWS_SECRET_ACCESS_KEY = "${my_secret_value}"
+                }
+
 pipeline {
     agent { label 'Jenkins-Agent' }
     tools {
@@ -60,11 +71,13 @@ pipeline {
         stage("Authenticate with AWS ECR") {
             steps {
                 script {
-                    withAWS(region: "${AWS_REGION}", credentials: 'aws-ecr-credentials') {
-                        sh """
-                        aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-                        """
-                    }
+                    sh """
+                    set +x
+                    export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                    export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+                    set -x
+                    """
                 }
             }
         }
@@ -72,17 +85,15 @@ pipeline {
         stage("Build & Push Docker Image") {
             steps {
                 script {
-                    withAWS(region: "${AWS_REGION}", credentials: 'aws-ecr-credentials') {
-                        // Build the Docker image
-                        docker_image = docker.build "${IMAGE_NAME}:${IMAGE_TAG}"
+                    // Build the Docker image
+                    docker_image = docker.build "${IMAGE_NAME}:${IMAGE_TAG}"
 
-                        // Tag and Push the image to ECR
-                        sh """
-                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
-                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                        docker push ${IMAGE_NAME}:latest
-                        """
-                    }
+                    // Tag and Push the image to ECR
+                    sh """
+                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
+                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                    docker push ${IMAGE_NAME}:latest
+                    """
                 }
             }
         }
